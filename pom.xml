@@ -10,7 +10,7 @@
   <name>Concordion Presenter plugin</name>
   <groupId>com.rjohnst.hudson.plugins.concordionpresenter</groupId>
   <artifactId>concordionpresenter</artifactId>
-  <version>0.1</version>
+  <version>0.1-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <url>http://wiki.hudson-ci.org/display/HUDSON/Concordion+Presenter+Plugin</url>
