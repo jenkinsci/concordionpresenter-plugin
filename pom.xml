@@ -10,7 +10,7 @@
   <name>Concordion Presenter plugin</name>
   <groupId>com.rjohnst.hudson.plugins.concordionpresenter</groupId>
   <artifactId>concordionpresenter</artifactId>
-  <version>0.4-SNAPSHOT</version>
+  <version>0.4</version>
   <packaging>hpi</packaging>
 
   <url>http://wiki.hudson-ci.org/display/HUDSON/Concordion+Presenter+Plugin</url>
@@ -91,4 +91,10 @@
 	  <url>java-net:/maven2-repository/trunk/repository/</url>
     </repository>
   </distributionManagement>
+
+  <scm>
+    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/concordionpresenter-0.4</connection>
+    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/concordionpresenter-0.4</developerConnection>
+    <url>https://hudson.dev.java.net/source/browse/hudson/tags/concordionpresenter-0.4</url>
+  </scm>
 </project>
