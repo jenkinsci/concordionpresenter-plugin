@@ -9,7 +9,7 @@
 
   <name>Concordion Presenter plugin</name>
   <artifactId>concordionpresenter</artifactId>
-  <version>0.6</version>
+  <version>0.7-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <url>http://wiki.hudson-ci.org/display/HUDSON/Concordion+Presenter+Plugin</url>
@@ -32,10 +32,4 @@
   <properties>
 	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-
-  <scm>
-    <connection>scm:svn:https://guest@svn.dev.java.net/svn/hudson/tags/concordionpresenter-0.6</connection>
-    <developerConnection>scm:svn:https://svn.dev.java.net/svn/hudson/tags/concordionpresenter-0.6</developerConnection>
-    <url>https://hudson.dev.java.net/source/browse/hudson/tags/concordionpresenter-0.6</url>
-  </scm>
 </project>
