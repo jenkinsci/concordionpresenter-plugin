@@ -1,4 +1,4 @@
-package com.rjohnst.hudson.plugins.concordionpresenter;
+package hudson.plugins.concordionpresenter;
 
 import hudson.model.Action;
 

@@ -1,4 +1,4 @@
-package com.rjohnst.hudson.plugins.concordionpresenter;
+package hudson.plugins.concordionpresenter;
 
 import java.io.File;
 import java.io.IOException;

@@ -8,7 +8,6 @@
   </parent>
 
   <name>Concordion Presenter plugin</name>
-  <groupId>com.rjohnst.hudson.plugins.concordionpresenter</groupId>
   <artifactId>concordionpresenter</artifactId>
   <version>0.6-SNAPSHOT</version>
   <packaging>hpi</packaging>

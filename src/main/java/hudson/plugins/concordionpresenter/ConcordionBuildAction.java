@@ -1,4 +1,4 @@
-package com.rjohnst.hudson.plugins.concordionpresenter;
+package hudson.plugins.concordionpresenter;
 
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
