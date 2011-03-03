@@ -25,111 +25,133 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
+import hudson.Util;
 import hudson.util.FormValidation;
 
 /**
  * Simple Recorder plugin for archiving Concordion test report pages.
- * 
+ *
  * @author Rob Johnston <rob@rjohnst.com>
  */
 public class ConcordionPresenter extends Recorder implements Serializable {
-	private static final long serialVersionUID = -6785762127770397981L;
+    private static final long serialVersionUID = -6785762127770397981L;
 
-	private final String location;
+    private final String location;
 
-	private static volatile List<ConcordionProjectAction> actions = new ArrayList<ConcordionProjectAction>();
+    private static volatile List<ConcordionProjectAction> actions = new ArrayList<ConcordionProjectAction>();
 
-	@DataBoundConstructor
-	public ConcordionPresenter(final String location) {
-		this.location = location;
-	}
+    @DataBoundConstructor
+    public ConcordionPresenter(final String location) {
+        this.location = location;
+    }
 
-	protected static FilePath getConcordionReportDirectory(final AbstractBuild<?, ?> build) {
-		return new FilePath(new File(build.getRootDir(), "concordion"));
-	}
+    protected static FilePath getConcordionReportDirectory(final AbstractBuild<?, ?> build) {
+        return new FilePath(new File(build.getRootDir(), "concordion"));
+    }
 
-	public String getLocation() {
-		return location;
-	}
+    public String getLocation() {
+        return location;
+    }
 
-	public BuildStepMonitor getRequiredMonitorService() {
-		return BuildStepMonitor.BUILD;
-	}
+    public BuildStepMonitor getRequiredMonitorService() {
+        return BuildStepMonitor.BUILD;
+    }
 
-	@Override
-	public boolean perform(final AbstractBuild<?, ?> build,
-			final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
+    @Override
+    public boolean perform(final AbstractBuild<?, ?> build,
+                           final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
 
-		listener.getLogger().println("Archiving Concordion test report...");
-		ConcordionBuildAction action;
+        listener.getLogger().println("[ConcordionPresenter] Archiving test report...");
+        ConcordionBuildAction action;
 
-		final long buildTime = build.getTimeInMillis();
+        final long buildTime = build.getTimeInMillis();
 
-		try {
-			final FilePath testReport = build.getWorkspace().child(getLocation());
+        try {
+            final FilePath testReport = build.getWorkspace().child(getLocation());
 
-			if (build.getResult().isWorseOrEqualTo(Result.FAILURE) &&
-					buildTime + 1000 /*error margin*/ > testReport.lastModified()) {
+            if (build.getResult().isWorseOrEqualTo(Result.FAILURE) &&
+                    buildTime + 1000 /*error margin*/ > testReport.lastModified()) {
 
-				listener.getLogger().println("Concordion report looks stale, not archiving. Did tests run?");
-				return true;
-			}
+                listener.getLogger().println("[ConcordionPresenter] Report looks stale, not archiving. Did tests run?");
+                return true;
+            }
 
-			final FilePath target = getConcordionReportDirectory(build);
+            final FilePath target = getConcordionReportDirectory(build);
 
-			listener.getLogger().println(String.format("Archiving report from %s to %s", testReport, target));
+            listener.getLogger().println(String.format("[ConcordionPresenter] Archiving report from %s to %s", testReport, target));
 
-			testReport.copyRecursiveTo(target);
-			action = new ConcordionBuildAction(build);
+            if (testReport.copyRecursiveTo(target) == 0) {
+                listener.error("[ConcordionPresenter] Failed archiving report!");
+                if (build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
+                    // don't fail builds just because we can't archive the report!
+                    // TODO remove diagnostic code
+                    listener.getLogger().println("target exists? " + target.exists());
+                    listener.getLogger().println("contents under target:");
+                    for (FilePath child : target.list()) {
+                        listener.getLogger().println(" - " + child.getName() + ": " + child.digest());
+                    }
+                    listener.getLogger().println("source exists? " + testReport.exists());
+                    listener.getLogger().println("contents under source:");
+                    for (FilePath child : testReport.list()) {
+                        listener.getLogger().println(" - " + child.getName() + ": " + child.digest());
+                    }
+                } else {
+                    build.setResult(Result.FAILURE);
+                }
+            } else {
+                listener.getLogger().println("[ConcordionPresenter] Report successfully archived!");
+            }
 
-		} catch (IOException e) {
-			e.printStackTrace(listener.error("Failed to archive concordion report"));
-			build.setResult(Result.FAILURE);
-			return true;
-		}
+            action = new ConcordionBuildAction(build);
 
-		build.getActions().add(action);
-		return true;
-	}
+        } catch (IOException e) {
+            Util.displayIOException(e, listener);
+            e.printStackTrace(listener.fatalError("[ConcordionPresenter] Failure!"));
+            return true;
+        }
 
-	@Override
-	public BuildStepDescriptor getDescriptor() {
-		return (DescriptorImpl) super.getDescriptor();
-	}
+        build.getActions().add(action);
+        return true;
+    }
 
-	@Override
-	public Collection<? extends Action> getProjectActions(
-			AbstractProject<?, ?> project) {
+    @Override
+    public BuildStepDescriptor getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
 
-		// the ProjectAction is stateless, so let's not keep creating them
-		if (actions.size() == 0) {
-			synchronized (this) {
-				if (actions.size() == 0) {
-					// double checked locking works in java5
-					actions.add(new ConcordionProjectAction());
-				}
-			}
-		}
+    @Override
+    public Collection<? extends Action> getProjectActions(
+            AbstractProject<?, ?> project) {
 
-		return actions;
-	}
+        // the ProjectAction is stateless, so let's not keep creating them
+        if (actions.size() == 0) {
+            synchronized (this) {
+                if (actions.size() == 0) {
+                    // double checked locking works in java5
+                    actions.add(new ConcordionProjectAction());
+                }
+            }
+        }
 
-	@Extension
-	public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
+        return actions;
+    }
 
-		public FormValidation doCheckLocation(@AncestorInPath final AbstractProject<?, ?> project, @QueryParameter final String value) throws IOException, ServletException {
-			return FilePath.validateFileMask(project.getSomeWorkspace(), value);
-		}
+    @Extension
+    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 
-		@Override
-		public boolean isApplicable(Class<? extends AbstractProject> jobType) {
-			return true;
-		}
+        public FormValidation doCheckLocation(@AncestorInPath final AbstractProject<?, ?> project, @QueryParameter final String value) throws IOException, ServletException {
+            return FilePath.validateFileMask(project.getSomeWorkspace(), value);
+        }
 
-		@Override
-		public String getDisplayName() {
-			return "Publish Concordion test report";
-		}
+        @Override
+        public boolean isApplicable(Class<? extends AbstractProject> jobType) {
+            return true;
+        }
 
-	}
+        @Override
+        public String getDisplayName() {
+            return "Publish Concordion test report";
+        }
+
+    }
 }
