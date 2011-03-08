@@ -104,13 +104,19 @@ public class ConcordionPresenter extends Recorder implements Serializable {
 
             action = new ConcordionBuildAction(build);
 
-        } catch (IOException e) {
-            Util.displayIOException(e, listener);
+        } catch (Exception e) {
+            if (e instanceof IOException) {
+                Util.displayIOException((IOException) e, listener);
+            } else {
+                listener.fatalError("[ConcordionPresenter] " + e.getMessage());
+            }
             e.printStackTrace(listener.fatalError("[ConcordionPresenter] Failure!"));
             return true;
         }
 
         build.getActions().add(action);
+        // TODO remove diagnostic code
+        listener.getLogger().println("CPP is about to return true (like a boss)");
         return true;
     }
 
