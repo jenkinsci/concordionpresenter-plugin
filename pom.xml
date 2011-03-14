@@ -11,12 +11,12 @@
     <artifactId>concordionpresenter</artifactId>
     <version>0.7-SNAPSHOT</version>
     <packaging>hpi</packaging>
-
-    <url>http://wiki.jenkins-ci.org/display/HUDSON/Concordion+Presenter+Plugin</url>
+    <url>http://wiki.jenkins-ci.org/display/JENKINS/Concordion+Presenter+Plugin</url>
 
     <scm>
-        <connection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/YOURPLUGIN</connection>
-        <developerConnection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/YOURPLUGIN</developerConnection>
+        <connection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/concordianpresenter</connection>
+        <developerConnection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/concordianpresenter</developerConnection>
+        <url>https://svn.jenkins-ci.org/trunk/hudson/plugins/concordianpresenter</url>
     </scm>
 
     <distributionManagement>
