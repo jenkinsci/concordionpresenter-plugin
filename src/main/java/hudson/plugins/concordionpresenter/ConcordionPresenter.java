@@ -82,22 +82,7 @@ public class ConcordionPresenter extends Recorder implements Serializable {
 
             if (testReport.copyRecursiveTo(target) == 0) {
                 listener.error("[ConcordionPresenter] Failed archiving report!");
-                if (build.getResult().isBetterOrEqualTo(Result.UNSTABLE)) {
-                    // don't fail builds just because we can't archive the report!
-                    // TODO remove diagnostic code
-                    listener.getLogger().println("target exists? " + target.exists());
-                    listener.getLogger().println("contents under target:");
-                    for (FilePath child : target.list()) {
-                        listener.getLogger().println(" - " + child.getName() + ": " + child.digest());
-                    }
-                    listener.getLogger().println("source exists? " + testReport.exists());
-                    listener.getLogger().println("contents under source:");
-                    for (FilePath child : testReport.list()) {
-                        listener.getLogger().println(" - " + child.getName() + ": " + child.digest());
-                    }
-                } else {
-                    build.setResult(Result.FAILURE);
-                }
+                // don't fail builds just because we can't archive the report!
             } else {
                 listener.getLogger().println("[ConcordionPresenter] Report successfully archived!");
             }
@@ -115,8 +100,6 @@ public class ConcordionPresenter extends Recorder implements Serializable {
         }
 
         build.getActions().add(action);
-        // TODO remove diagnostic code
-        listener.getLogger().println("CPP is about to return true (like a boss)");
         return true;
     }
 
