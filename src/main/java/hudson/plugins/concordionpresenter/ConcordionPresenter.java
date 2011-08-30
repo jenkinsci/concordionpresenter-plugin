@@ -1,32 +1,27 @@
 package hudson.plugins.concordionpresenter;
 
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.Util;
+import hudson.model.*;
+import hudson.remoting.VirtualChannel;
+import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Publisher;
+import hudson.tasks.Recorder;
+import hudson.util.FormValidation;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+
+import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import javax.servlet.ServletException;
-
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
-import hudson.model.BuildListener;
-import hudson.model.Result;
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.BuildStepMonitor;
-import hudson.tasks.Publisher;
-import hudson.tasks.Recorder;
-import hudson.Util;
-import hudson.util.FormValidation;
 
 /**
  * Simple Recorder plugin for archiving Concordion test report pages.
@@ -39,6 +34,9 @@ public class ConcordionPresenter extends Recorder implements Serializable {
     private final String location;
 
     private static volatile List<ConcordionProjectAction> actions = new ArrayList<ConcordionProjectAction>();
+    static {
+        actions.add(new ConcordionProjectAction());
+    }
 
     @DataBoundConstructor
     public ConcordionPresenter(final String location) {
@@ -85,6 +83,7 @@ public class ConcordionPresenter extends Recorder implements Serializable {
                 // don't fail builds just because we can't archive the report!
             } else {
                 listener.getLogger().println("[ConcordionPresenter] Report successfully archived!");
+                buildIndexFile(target);
             }
 
             action = new ConcordionBuildAction(build);
@@ -103,6 +102,45 @@ public class ConcordionPresenter extends Recorder implements Serializable {
         return true;
     }
 
+    private void buildIndexFile(FilePath dir) throws IOException, InterruptedException {
+
+        dir = dir.absolutize();
+        String dirPath = dir.act(new FilePath.FileCallable<String>() {
+            public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+                return f.getCanonicalPath();
+            }
+        });
+        dirPath = dirPath.replace('\\', '/');
+        if (!dirPath.endsWith("/")){
+            dirPath+="/";
+        }
+        int dirPathLength = dirPath.length();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html><body>\n");
+        sb.append("<h1>Concordion Reports</h1>\n");
+        sb.append("<ul>\n");
+
+        FilePath[] reports = dir.list("**/*.html");
+        for (FilePath report : reports) {
+            report = report.absolutize();
+            String reportPath = report.act(new FilePath.FileCallable<String>() {
+                public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+                    return f.getCanonicalPath();
+                }
+            });
+            reportPath = reportPath.replace('\\', '/');
+            reportPath = reportPath.substring(dirPathLength);
+            sb.append(String.format("<li><a href='%s'>%s</a></li>\n",reportPath,reportPath));
+        }
+
+        sb.append("</ul>\n");
+        sb.append("</body></html>");
+
+        FilePath index = new FilePath(dir, "index.html");
+        index.write(sb.toString(), "UTF-8");
+    }
+
     @Override
     public BuildStepDescriptor getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
@@ -111,17 +149,6 @@ public class ConcordionPresenter extends Recorder implements Serializable {
     @Override
     public Collection<? extends Action> getProjectActions(
             AbstractProject<?, ?> project) {
-
-        // the ProjectAction is stateless, so let's not keep creating them
-        if (actions.size() == 0) {
-            synchronized (this) {
-                if (actions.size() == 0) {
-                    // double checked locking works in java5
-                    actions.add(new ConcordionProjectAction());
-                }
-            }
-        }
-
         return actions;
     }
 
