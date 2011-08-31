@@ -31,6 +31,11 @@
             <name>Rob Johnston</name>
             <email>rob@rjohnst.com</email>
         </developer>
+        <developer>
+            <id>ocroisier</id>
+            <name>Olivier Croisier</name>
+            <email>olivier@thecodersbreakfast.net</email>
+        </developer>
     </developers>
 
     <properties>

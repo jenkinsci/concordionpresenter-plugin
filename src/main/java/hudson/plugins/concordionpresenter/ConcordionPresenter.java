@@ -27,20 +27,31 @@ import java.util.List;
  * Simple Recorder plugin for archiving Concordion test report pages.
  *
  * @author Rob Johnston <rob@rjohnst.com>
+ * @author Olivier Croisier <olivier@thecodersbreakfast.net>
  */
 public class ConcordionPresenter extends Recorder implements Serializable {
     private static final long serialVersionUID = -6785762127770397981L;
 
+    /**
+     * The path to the directory where Concordion reports are stored
+     */
     private final String location;
 
-    private static volatile List<ConcordionProjectAction> actions = new ArrayList<ConcordionProjectAction>();
+    /**
+     * On the auto-generated index page, the prefix to strip in the test report names to enhance readability
+     * (ex: com/mycompany/myproject/)
+     */
+    private final String locationPrefix;
+
+    private static List<ConcordionProjectAction> actions = new ArrayList<ConcordionProjectAction>();
     static {
         actions.add(new ConcordionProjectAction());
     }
 
     @DataBoundConstructor
-    public ConcordionPresenter(final String location) {
+    public ConcordionPresenter(final String location, String locationPrefix) {
         this.location = location;
+        this.locationPrefix = locationPrefix;
     }
 
     protected static FilePath getConcordionReportDirectory(final AbstractBuild<?, ?> build) {
@@ -49,6 +60,10 @@ public class ConcordionPresenter extends Recorder implements Serializable {
 
     public String getLocation() {
         return location;
+    }
+
+    public String getLocationPrefix() {
+        return locationPrefix;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -104,41 +119,61 @@ public class ConcordionPresenter extends Recorder implements Serializable {
 
     private void buildIndexFile(FilePath dir) throws IOException, InterruptedException {
 
-        dir = dir.absolutize();
-        String dirPath = dir.act(new FilePath.FileCallable<String>() {
-            public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-                return f.getCanonicalPath();
-            }
-        });
-        dirPath = dirPath.replace('\\', '/');
+        String cssStyle =
+                "* { font-size: 100%; line-height: 1.5;} " +
+                "html { padding: 20px; font-size: 10px;} " +
+                "ul { font-family: courier,monospace; font-size: 1.4em; border: solid 1px #C3D9FF; " +
+                "     background-color: #F5F9FD; padding: 10px; padding-left: 2em;} " +
+                "h1 { color: #000; font-family: arial,sans-serif; font-size: 3em;}";
+
+        // Validate the locationPrefix
+        String prefix = "";
+        if (locationPrefix !=null && locationPrefix.length()>0) {
+            prefix = locationPrefix;
+        }
+
+        // Determine Concordion reports base directory
+        String dirPath = getShashedPath(dir);
         if (!dirPath.endsWith("/")){
             dirPath+="/";
         }
         int dirPathLength = dirPath.length();
 
+        // Create index file contents
         StringBuilder sb = new StringBuilder();
-        sb.append("<html><body>\n");
+        sb.append("<html>\n");
+        sb.append("<head><style>").append(cssStyle).append("</style></head>\n");
+        sb.append("<body>\n");
         sb.append("<h1>Concordion Reports</h1>\n");
         sb.append("<ul>\n");
 
         FilePath[] reports = dir.list("**/*.html");
         for (FilePath report : reports) {
-            report = report.absolutize();
-            String reportPath = report.act(new FilePath.FileCallable<String>() {
-                public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-                    return f.getCanonicalPath();
-                }
-            });
-            reportPath = reportPath.replace('\\', '/');
+            String reportPath = getShashedPath(report);
             reportPath = reportPath.substring(dirPathLength);
-            sb.append(String.format("<li><a href='%s'>%s</a></li>\n",reportPath,reportPath));
+            String reportTitle = reportPath;
+            if (reportPath.startsWith(prefix)) {
+                reportTitle = reportPath.substring(prefix.length());
+            }
+            sb.append(String.format("<li><a href='%s'>%s</a></li>\n",reportPath,reportTitle));
         }
 
         sb.append("</ul>\n");
         sb.append("</body></html>");
 
+        // Actually output index file
         FilePath index = new FilePath(dir, "index.html");
         index.write(sb.toString(), "UTF-8");
+    }
+
+    private String getShashedPath(FilePath dir) throws IOException, InterruptedException {
+        String dirPath = dir.absolutize().act(new FilePath.FileCallable<String>() {
+            public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+                return f.getCanonicalPath();
+            }
+        });
+        dirPath = dirPath.replace('\\', '/');
+        return dirPath;
     }
 
     @Override
