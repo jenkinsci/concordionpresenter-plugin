@@ -8,7 +8,7 @@
 
     <name>Concordion Presenter plugin</name>
     <artifactId>concordionpresenter</artifactId>
-    <version>0.8-SNAPSHOT</version>
+    <version>0.9-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <url>http://wiki.jenkins-ci.org/display/JENKINS/Concordion+Presenter+Plugin</url>
 
