@@ -1,11 +1,14 @@
 package hudson.plugins.concordionpresenter;
 
+import hudson.FilePath;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
 import hudson.model.AbstractBuild;
 import hudson.model.DirectoryBrowserSupport;
 import hudson.model.Action;
+
+import java.io.IOException;
 
 public class ConcordionBuildAction implements Action {
 
@@ -34,11 +37,12 @@ public class ConcordionBuildAction implements Action {
         return null;
     }
 
-    public DirectoryBrowserSupport doDynamic(final StaplerRequest req, final StaplerResponse rsp) {
+    public DirectoryBrowserSupport doDynamic(final StaplerRequest req, final StaplerResponse rsp) throws IOException, InterruptedException {
         if(this.build != null) {
-            return new DirectoryBrowserSupport(this,
-                    ConcordionPresenter.getConcordionReportDirectory(this.build),
-                    "concordion", "clipboard.gif", false);
+            final FilePath concordionReportDirectory = ConcordionPresenter.getConcordionReportDirectory(this.build);
+            return new DirectoryBrowserSupport(this.build,
+                    concordionReportDirectory,
+                    "concordion", "clipboard.gif", !concordionReportDirectory.child("index.html").exists());
         }
         return null;
     }
