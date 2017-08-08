@@ -54,7 +54,7 @@ public class ConcordionPresenter extends Recorder implements Serializable {
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
-        return BuildStepMonitor.BUILD;
+        return BuildStepMonitor.NONE;
     }
 
     @Override
